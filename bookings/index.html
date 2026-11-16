@@ -1,0 +1,317 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Bookings | Carlo Italia</title>
+<meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#1f3328">
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="../apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Young+Serif&family=Figtree:wght@400;500;700&display=swap">
+<style>
+:root{--paper:#eef0e5;--card:#fff;--ink:#1d2820;--muted:#5d6658;--line:#d3d6c6;--dark:#1f3328;--red:#b5321e;--gold:#c79b3c;--seat:#2f7a4b;--left:#9aa294}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--paper);color:var(--ink);font:16px/1.45 Figtree,Arial,sans-serif;min-height:100vh;padding-bottom:calc(90px + env(safe-area-inset-bottom))}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+.hide{display:none!important}
+/* login */
+.login{min-height:100vh;display:grid;place-items:center;padding:24px}
+.login form{background:var(--card);padding:28px;border-radius:16px;width:min(360px,100%);box-shadow:0 20px 40px -24px rgba(0,0,0,.35)}
+.login h1{font:400 26px/1.15 'Young Serif',Georgia,serif;margin-bottom:6px}
+.login p{color:var(--muted);font-size:14px;margin-bottom:18px}
+.login input{width:100%;font-size:28px;letter-spacing:.3em;text-align:center;padding:12px;border:1.5px solid var(--line);border-radius:10px}
+.login button{width:100%;margin-top:12px;background:var(--dark);color:#fff;border:0;border-radius:10px;padding:14px;font-weight:700}
+.login .err{color:var(--red);font-weight:700;font-size:14px;margin-top:10px;min-height:1em}
+/* top */
+header{position:sticky;top:0;z-index:10;background:var(--dark);color:#fff;padding:calc(10px + env(safe-area-inset-top)) 14px 10px}
+.hrow{display:flex;align-items:center;gap:8px;justify-content:space-between;max-width:900px;margin:0 auto}
+.brand{font:400 18px/1 'Young Serif',Georgia,serif}
+.datenav{display:flex;align-items:center;gap:6px}
+.datenav button{background:rgba(255,255,255,.12);border:0;color:#fff;border-radius:8px;min-width:38px;height:38px;padding:0 10px;font-weight:700}
+.datenav input{background:rgba(255,255,255,.12);border:0;color:#fff;border-radius:8px;height:38px;padding:0 8px;color-scheme:dark;width:140px}
+.dayline{max-width:900px;margin:10px auto 0;display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap}
+.dayline h1{font:400 22px/1.15 'Young Serif',Georgia,serif}
+.stats{font-size:14px;opacity:.85}
+.tabs{max-width:900px;margin:10px auto 0;display:flex;gap:6px}
+.tabs button{flex:1;background:rgba(255,255,255,.1);border:0;color:#fff;border-radius:8px;padding:9px;font-weight:700;font-size:14px}
+.tabs button[aria-pressed=true]{background:#fff;color:var(--dark)}
+main{max-width:900px;margin:0 auto;padding:14px}
+.banner{background:#fbe9e4;color:var(--red);border-radius:10px;padding:12px 14px;font-weight:700;margin-bottom:12px;display:flex;justify-content:space-between;gap:10px;align-items:center}
+.banner button{background:var(--red);color:#fff;border:0;border-radius:8px;padding:8px 12px;font-weight:700;font-size:14px}
+.empty{text-align:center;color:var(--muted);padding:40px 10px}
+/* booking cards */
+.bk{background:var(--card);border-radius:14px;padding:14px;margin-bottom:10px;display:grid;grid-template-columns:84px minmax(0,1fr);gap:4px 12px;border-left:5px solid var(--dark);position:relative}
+.bk.seated{border-left-color:var(--seat)}
+.bk.left,.bk.cancelled,.bk.noshow{border-left-color:var(--left);opacity:.62}
+.bk .t{font:400 22px/1 'Young Serif',Georgia,serif;grid-row:span 3}
+.bk .t small{display:block;font:700 12px/1.3 Figtree,sans-serif;color:var(--muted);margin-top:6px}
+.bk .who{font-weight:700;font-size:17px;display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+.bk .who .n{background:var(--paper);border-radius:6px;padding:1px 7px;font-size:14px}
+.bk .meta{font-size:14px;color:var(--muted);display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+.bk .meta a{color:var(--dark);font-weight:700}
+.bk .note{font-size:14px;background:#fff7e3;border-radius:8px;padding:6px 9px}
+.tsel{font-size:14px;font-weight:700;border:1.5px solid var(--line);border-radius:8px;padding:3px 6px;background:#fff}
+.chip{font-size:12px;font-weight:700;border-radius:999px;padding:3px 9px;background:var(--paper)}
+.chip.seated{background:#dff0e5;color:var(--seat)}
+.chip.cancelled,.chip.noshow{background:#f4e0dc;color:var(--red)}
+.acts{grid-column:1/-1;display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.acts button{border:1.5px solid var(--line);background:#fff;border-radius:9px;padding:8px 12px;font-size:14px;font-weight:700}
+.acts .seat{background:var(--seat);border-color:var(--seat);color:#fff}
+.acts .leave{background:var(--dark);border-color:var(--dark);color:#fff}
+.acts .undo{color:var(--muted)}
+/* timeline */
+.tl{background:var(--card);border-radius:14px;padding:12px;overflow-x:auto}
+.tl-grid{min-width:620px;position:relative}
+.tl-row{display:grid;grid-template-columns:54px 1fr;align-items:center;height:46px;border-bottom:1px solid var(--line)}
+.tl-row:last-child{border-bottom:0}
+.tl-row b{font-size:14px;position:sticky;left:0;background:#fff;z-index:3;height:100%;display:flex;flex-direction:column;justify-content:center}
+.tl-row b small{display:block;font-weight:400;color:var(--muted);font-size:11px}
+.tl-lane{position:relative;height:100%}
+.tl-blk{position:absolute;top:6px;bottom:6px;border-radius:7px;background:var(--dark);color:#fff;font-size:12px;font-weight:700;padding:4px 7px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;line-height:1.25}
+.tl-blk.seated{background:var(--seat)}
+.tl-blk.left{background:var(--left)}
+.tl-hours{display:grid;grid-template-columns:54px 1fr;font-size:11px;color:var(--muted);margin-bottom:4px}
+.tl-hours div{position:relative;height:14px}
+.tl-hours div span{position:absolute;transform:translateX(-50%);white-space:nowrap}
+.tl-now{position:absolute;top:18px;bottom:0;width:2px;background:var(--red);z-index:2}
+.tl-legend{display:flex;gap:14px;font-size:12px;color:var(--muted);margin-top:10px}
+.tl-legend i{display:inline-block;width:12px;height:12px;border-radius:3px;vertical-align:-2px;margin-right:5px;background:var(--dark)}
+.tl-legend i.s{background:var(--seat)}.tl-legend i.l{background:var(--left)}
+/* bottom bar */
+.bar{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-top:1px solid var(--line);padding:10px 14px calc(10px + env(safe-area-inset-bottom));display:flex;gap:8px;justify-content:center;z-index:9}
+.bar button{flex:1;max-width:280px;border:0;border-radius:12px;padding:14px;font-weight:700}
+.bar .add{background:var(--red);color:#fff}
+.bar .walk{background:var(--dark);color:#fff}
+.bar .more{flex:0 0 auto;background:var(--paper)}
+/* sheet */
+.sheet{position:fixed;inset:0;background:rgba(15,20,16,.45);z-index:20;display:flex;align-items:flex-end;justify-content:center}
+.sheet form,.sheet .panel{background:var(--card);width:min(560px,100%);border-radius:18px 18px 0 0;padding:18px 16px calc(18px + env(safe-area-inset-bottom));max-height:92vh;overflow:auto}
+.sheet h2{font:400 22px/1.2 'Young Serif',Georgia,serif;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center}
+.sheet h2 button{background:none;border:0;font-size:26px;line-height:1}
+.f2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.sheet label{display:flex;flex-direction:column;gap:4px;font-size:13px;font-weight:700;margin-bottom:10px}
+.sheet label{min-width:0}.sheet input,.sheet select,.sheet textarea{min-width:0;width:100%;font-size:16px;padding:10px;border:1.5px solid var(--line);border-radius:9px;background:#fff;font-weight:400}
+.sheet .check{flex-direction:row;align-items:center;gap:8px;font-weight:500}
+.sheet .check input{width:20px;height:20px}
+.sheet .go{width:100%;background:var(--dark);color:#fff;border:0;border-radius:12px;padding:14px;font-weight:700;margin-top:4px}
+.sheet .msg{color:var(--red);font-weight:700;font-size:14px;margin:6px 0}
+.cl-list{list-style:none;margin:8px 0 14px}
+.cl-list li{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--line);font-size:15px}
+.cl-list button{border:0;background:var(--paper);border-radius:8px;padding:6px 10px;font-weight:700;font-size:13px}
+.toast{position:fixed;left:50%;bottom:calc(86px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 16px;border-radius:999px;font-size:14px;font-weight:700;z-index:30;opacity:0;transition:opacity .2s;pointer-events:none}
+.toast.on{opacity:1}
+.sync{font-size:12px;opacity:.7}
+</style>
+</head>
+<body>
+<section class="login" id="login">
+  <form id="loginForm">
+    <h1>Carlo Italia bookings</h1>
+    <p>Enter the staff PIN to see and manage bookings.</p>
+    <input id="pin" type="password" inputmode="numeric" autocomplete="current-password" aria-label="Staff PIN" required>
+    <button type="submit">Open bookings</button>
+    <p class="err" id="loginErr"></p>
+  </form>
+</section>
+
+<div id="app" class="hide">
+<header>
+  <div class="hrow">
+    <span class="brand">Carlo Italia</span>
+    <div class="datenav">
+      <button type="button" id="prev" aria-label="Previous day">‹</button>
+      <button type="button" id="today">Today</button>
+      <button type="button" id="next" aria-label="Next day">›</button>
+      <input type="date" id="dpick" aria-label="Pick a date">
+    </div>
+  </div>
+  <div class="dayline"><h1 id="dayTitle">…</h1><span class="stats" id="stats"></span></div>
+  <div class="tabs"><button type="button" id="tList" aria-pressed="true">Bookings</button><button type="button" id="tTables" aria-pressed="false">Tables</button></div>
+</header>
+<main>
+  <div id="closedBanner" class="banner hide"><span id="closedTxt">Closed this day. Online bookings are off.</span><button type="button" id="reopen">Open again</button></div>
+  <div id="list"></div>
+  <div id="tables" class="hide"></div>
+  <p class="sync" id="sync"></p>
+</main>
+<div class="bar">
+  <button type="button" class="add" id="openAdd">+ Booking</button>
+  <button type="button" class="walk" id="openWalk">Walk-in</button>
+  <button type="button" class="more" id="openMore" aria-label="Closed days and settings">⋯</button>
+</div>
+</div>
+
+<div class="sheet hide" id="addSheet">
+  <form id="addForm">
+    <h2><span id="addTitle">New booking</span><button type="button" data-close aria-label="Close">×</button></h2>
+    <div class="f2">
+      <label>Date<input type="date" name="date" required></label>
+      <label>Time<select name="time" required></select></label>
+    </div>
+    <div class="f2">
+      <label>Guests<input type="number" name="size" min="1" max="40" value="2" required></label>
+      <label>Table<select name="tables"></select></label>
+    </div>
+    <label>Name<input name="name" autocomplete="off"></label>
+    <div class="f2">
+      <label>Phone<input name="phone" type="tel" autocomplete="off"></label>
+      <label>Email<input name="email" type="email" autocomplete="off"></label>
+    </div>
+    <label>Notes<textarea name="notes" rows="2"></textarea></label>
+    <label class="check"><input type="checkbox" name="sendEmail"> Email them a confirmation</label>
+    <p class="msg" id="addMsg"></p>
+    <button class="go" type="submit" id="addGo">Save booking</button>
+  </form>
+</div>
+
+<div class="sheet hide" id="moreSheet">
+  <div class="panel">
+    <h2>Closed days<button type="button" data-close aria-label="Close">×</button></h2>
+    <p style="font-size:14px;color:var(--muted)">Close a day and nobody can book it online. Existing bookings are not cancelled.</p>
+    <form id="clForm" class="f2" style="margin-top:12px">
+      <label>Date<input type="date" name="date" required></label>
+      <label>Reason (optional)<input name="note" placeholder="Holiday"></label>
+      <button class="go" type="submit" style="grid-column:1/-1">Close this day</button>
+    </form>
+    <ul class="cl-list" id="clList"></ul>
+    <button type="button" class="go" id="logout" style="background:var(--paper);color:var(--ink)">Log out on this phone</button>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  'use strict';
+  var API='https://script.google.com/macros/s/AKfycbzjqKTC0CLT7kqkpCGWdEVA_Q1rLzpZp0xr3hY4IeMJLD91gcpk8TylPjZWG1DJ5U18/exec';
+  var $=function(id){return document.getElementById(id)};
+  var store={get:function(k){try{return localStorage.getItem(k)}catch(e){return null}},set:function(k,v){try{localStorage.setItem(k,v)}catch(e){}},del:function(k){try{localStorage.removeItem(k)}catch(e){}}};
+  var pin=store.get('carloPin')||'', data=null, view='list', date=null, timer=null;
+  function post(b){b.pin=pin;return fetch(API,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(b)}).then(function(r){return r.json()})}
+  function toast(t){var x=$('toast');x.textContent=t;x.classList.add('on');clearTimeout(x._t);x._t=setTimeout(function(){x.classList.remove('on')},2200)}
+  function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+  function mins(t){var p=String(t).split(':');return +p[0]*60+ +p[1]}
+  function hm(m){return ('0'+Math.floor(m/60)).slice(-2)+':'+('0'+m%60).slice(-2)}
+  function nice(t){var m=mins(t),h=Math.floor(m/60),mm=m%60,ap=h>=12?'pm':'am';h=h%12||12;return h+(mm?':'+('0'+mm).slice(-2):'')+ap}
+  function shift(d,n){var p=d.split('-').map(Number),x=new Date(Date.UTC(p[0],p[1]-1,p[2]+n));return x.toISOString().slice(0,10)}
+
+  // login
+  $('loginForm').addEventListener('submit',function(e){e.preventDefault();pin=$('pin').value.trim();$('loginErr').textContent='Checking…';
+    post({a:'ping'}).then(function(r){if(r.ok){store.set('carloPin',pin);start()}else{$('loginErr').textContent='That PIN is not right.'}}).catch(function(){$('loginErr').textContent='Could not connect. Check your signal.'})});
+  function start(){$('login').classList.add('hide');$('app').classList.remove('hide');load(date);clearInterval(timer);timer=setInterval(function(){if(!document.hidden&&$('addSheet').classList.contains('hide'))load(date,true)},45000)}
+  if(pin){post({a:'ping'}).then(function(r){if(r.ok)start();else store.del('carloPin')}).catch(function(){start()})}
+
+  function load(d,quiet){
+    if(!quiet)$('sync').textContent='Loading…';
+    return post({a:'list',date:d||''}).then(function(r){
+      if(!r.ok){if(r.error==='pin'){store.del('carloPin');location.reload()}return}
+      data=r;date=r.date;render();$('sync').textContent='Updated '+r.now.iso.slice(11)+'. Refreshes by itself.';
+    }).catch(function(){$('sync').textContent='Could not refresh. Check your signal.'});
+  }
+  function render(){
+    $('dpick').value=date;
+    var isToday=date===data.now.date;
+    $('dayTitle').textContent=(isToday?'Today, ':'')+data.nice;
+    var act=data.bookings.filter(function(b){return b.status!=='cancelled'&&b.status!=='noshow'});
+    var covers=act.reduce(function(a,b){return a+b.size},0);
+    $('stats').textContent=act.length+(act.length===1?' booking, ':' bookings, ')+covers+' guests'+(data.hours?'':' · closed day');
+    $('closedBanner').classList.toggle('hide',!data.closed);
+    renderList();if(view==='tables')renderTables();renderClosures();
+  }
+  function tableOpts(sel){
+    var o='<option value="">No table</option>';
+    data.tables.forEach(function(t){o+='<option'+(sel===t.id?' selected':'')+' value="'+t.id+'">'+t.id+' ('+t.seats+')</option>'});
+    if(sel&&!data.tables.some(function(t){return t.id===sel}))o+='<option selected value="'+esc(sel)+'">'+esc(sel)+'</option>';
+    return o;
+  }
+  function renderList(){
+    var L=$('list');
+    if(!data.bookings.length){L.innerHTML='<p class="empty">No bookings for this day yet.</p>';return}
+    var nowM=data.now.mins,isToday=date===data.now.date;
+    L.innerHTML=data.bookings.map(function(b){
+      var st=b.status,acts='';
+      if(st==='confirmed')acts='<button class="seat" data-s="seated">Seated</button><button data-s="noshow">No-show</button><button data-s="cancelled">Cancel</button>';
+      else if(st==='seated')acts='<button class="leave" data-s="left">They’ve left, free the table</button><button class="undo" data-s="confirmed">Undo</button>';
+      else acts='<button class="undo" data-s="confirmed">Undo ('+(st==='left'?'left '+nice(b.leftAt):st==='noshow'?'no-show':'cancelled')+')</button>';
+      var end=hm(Math.min(mins(b.time)+data.duration,1439));
+      return '<article class="bk '+st+'" data-id="'+b.id+'"><div class="t">'+nice(b.time)+'<small>to '+nice(end)+'</small></div>'+
+        '<div class="who">'+esc(b.name)+' <span class="n">'+b.size+'</span>'+(st!=='confirmed'?' <span class="chip '+st+'">'+(st==='noshow'?'no-show':st)+'</span>':'')+'</div>'+
+        '<div class="meta"><select class="tsel" aria-label="Table">'+tableOpts(b.tables)+'</select>'+(b.phone?'<a href="tel:'+esc(b.phone)+'">'+esc(b.phone)+'</a>':'')+'<span>'+esc(b.source)+'</span></div>'+
+        (b.notes?'<div class="note">'+esc(b.notes)+'</div>':'<div></div>')+
+        '<div class="acts">'+acts+'</div></article>';
+    }).join('');
+  }
+  $('list').addEventListener('click',function(e){
+    var btn=e.target.closest('button[data-s]');if(!btn)return;
+    var card=btn.closest('.bk'),id=card.dataset.id,s=btn.dataset.s;
+    if(s==='cancelled'&&!confirm('Cancel this booking?'))return;
+    btn.disabled=true;
+    post({a:'set',id:id,status:s}).then(function(r){toast(r.ok?(s==='left'?'Table freed':'Saved'):'Could not save');load(date,true)});
+  });
+  $('list').addEventListener('change',function(e){
+    if(!e.target.classList.contains('tsel'))return;
+    var id=e.target.closest('.bk').dataset.id;
+    post({a:'move',id:id,tables:e.target.value}).then(function(r){toast(r.ok?'Table changed':'Could not save');load(date,true)});
+  });
+  function renderTables(){
+    var T=$('tables'),h=data.hours||[720,1290],lo=h[0]-30,hi=h[1]+30,span=hi-lo;
+    var pct=function(m){return ((m-lo)/span*100)+'%'};
+    var hours='';for(var m=Math.ceil(lo/60)*60;m<=hi;m+=60)hours+='<span style="left:'+pct(m)+'">'+nice(hm(m))+'</span>';
+    var rows=data.tables.map(function(t){
+      var blks=data.bookings.filter(function(b){return (b.status==='confirmed'||b.status==='seated'||b.status==='left')&&b.tables.split('+').indexOf(t.id)>-1}).map(function(b){
+        var s=mins(b.time),e=s+data.duration;if(b.status==='left'&&b.leftAt)e=Math.max(s+10,mins(b.leftAt));
+        return '<div class="tl-blk '+b.status+'" style="left:'+pct(s)+';width:calc('+((e-s)/span*100)+'% - 2px)">'+esc(b.name)+' · '+b.size+'</div>';
+      }).join('');
+      return '<div class="tl-row"><b>'+t.id+'<small>'+t.seats+' seats</small></b><div class="tl-lane">'+blks+'</div></div>';
+    }).join('');
+    var now=date===data.now.date&&data.now.mins>=lo&&data.now.mins<=hi?'<div class="tl-now" style="left:calc(54px + (100% - 54px) * '+((data.now.mins-lo)/span)+')"></div>':'';
+    T.innerHTML='<div class="tl" id="tlScroll"><div class="tl-grid"><div class="tl-hours"><span></span><div>'+hours+'</div></div>'+rows+now+'</div><div class="tl-legend"><span><i></i>Booked</span><span><i class="s"></i>Seated</span><span><i class="l"></i>Left</span></div></div>';
+    requestAnimationFrame(function(){var sc=$('tlScroll'),g=sc.querySelector('.tl-grid'),lane=sc.querySelector('.tl-lane');if(!g||!lane||sc.scrollWidth<=sc.clientWidth)return;var focus=date===data.now.date?data.now.mins:null;if(focus===null){var f=data.bookings.filter(function(b){return b.status!=='cancelled'&&b.status!=='noshow'})[0];focus=f?mins(f.time):lo+span/2}var x=54+(focus-lo)/span*lane.offsetWidth;sc.scrollLeft=Math.max(0,x-sc.clientWidth/3)});
+  }
+  function renderClosures(){
+    $('clList').innerHTML=data.closures.length?data.closures.map(function(c){return '<li><span>'+c.date+(c.note?' · '+esc(c.note):'')+'</span><button data-d="'+c.date+'">Reopen</button></li>'}).join(''):'<li><span style="color:var(--muted)">No closed days coming up.</span></li>';
+  }
+  $('clList').addEventListener('click',function(e){var b=e.target.closest('button[data-d]');if(!b)return;post({a:'closure',date:b.dataset.d,remove:true}).then(function(){toast('Day reopened');load(date,true)})});
+  $('clForm').addEventListener('submit',function(e){e.preventDefault();var f=e.target;post({a:'closure',date:f.date.value,note:f.note.value}).then(function(r){toast(r.ok?'Day closed':'Could not save');f.reset();load(date,true)})});
+  $('reopen').addEventListener('click',function(){post({a:'closure',date:date,remove:true}).then(function(){toast('Day reopened');load(date,true)})});
+  $('logout').addEventListener('click',function(){store.del('carloPin');location.reload()});
+
+  $('prev').onclick=function(){load(shift(date,-1))};$('next').onclick=function(){load(shift(date,1))};
+  $('today').onclick=function(){load('')};$('dpick').onchange=function(){if(this.value)load(this.value)};
+  $('tList').onclick=function(){view='list';$('list').classList.remove('hide');$('tables').classList.add('hide');this.setAttribute('aria-pressed','true');$('tTables').setAttribute('aria-pressed','false')};
+  $('tTables').onclick=function(){view='tables';$('tables').classList.remove('hide');$('list').classList.add('hide');if(data)renderTables();this.setAttribute('aria-pressed','true');$('tList').setAttribute('aria-pressed','false')};
+
+  // add booking / walk-in
+  var walk=false;
+  function openAdd(isWalk){
+    walk=isWalk;var f=$('addForm');f.reset();$('addMsg').textContent='';
+    $('addTitle').textContent=isWalk?'Walk-in':'New booking';
+    f.date.value=isWalk?data.now.date:date;
+    var opts='',sel='';var h=data.hours||[720,1290];
+    for(var m=h[0];m<=h[1];m+=15)opts+='<option value="'+hm(m)+'">'+nice(hm(m))+'</option>';
+    f.time.innerHTML=opts;
+    if(isWalk){var n=Math.round(data.now.mins/15)*15;var v=hm(n);if(!f.time.querySelector('[value="'+v+'"]'))f.time.insertAdjacentHTML('afterbegin','<option value="'+v+'">'+nice(v)+'</option>');f.time.value=v}
+    else f.time.value=hm(Math.max(h[0],1140));
+    f.tables.innerHTML='<option value="">Pick for me</option>'+data.tables.map(function(t){return '<option value="'+t.id+'">'+t.id+' ('+t.seats+')</option>'}).join('');
+    f.elements.namedItem('name').placeholder=isWalk?'Walk-in':'';
+    f.sendEmail.closest('label').classList.toggle('hide',isWalk);
+    $('addSheet').classList.remove('hide');
+  }
+  $('openAdd').onclick=function(){openAdd(false)};$('openWalk').onclick=function(){openAdd(true)};
+  $('openMore').onclick=function(){$('moreSheet').classList.remove('hide')};
+  [].forEach.call(document.querySelectorAll('[data-close]'),function(b){b.onclick=function(){b.closest('.sheet').classList.add('hide')}});
+  [].forEach.call(document.querySelectorAll('.sheet'),function(s){s.addEventListener('click',function(e){if(e.target===s)s.classList.add('hide')})});
+  $('addForm').addEventListener('submit',function(e){
+    e.preventDefault();var f=e.target;$('addGo').disabled=true;$('addMsg').textContent='';
+    var body={a:'add',date:f.date.value,time:f.time.value,size:+f.size.value,tables:f.tables.value,name:f.elements.namedItem('name').value,phone:f.phone.value,email:f.email.value,notes:f.notes.value,sendEmail:f.sendEmail.checked,walkin:walk,force:!!f.tables.value};
+    post(body).then(function(r){
+      if(r.ok){$('addSheet').classList.add('hide');toast('Saved on '+(r.tables||'no table'));load(f.date.value,true)}
+      else $('addMsg').textContent=r.msg||'Could not save.';
+    }).catch(function(){$('addMsg').textContent='Could not connect.'}).then(function(){$('addGo').disabled=false});
+  });
+})();
+</script>
+</body>
+</html>
