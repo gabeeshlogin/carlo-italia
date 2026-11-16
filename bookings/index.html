@@ -42,6 +42,14 @@ main{max-width:900px;margin:0 auto;padding:14px}
 .banner{background:#fbe9e4;color:var(--red);border-radius:10px;padding:12px 14px;font-weight:700;margin-bottom:12px;display:flex;justify-content:space-between;gap:10px;align-items:center}
 .banner button{background:var(--red);color:#fff;border:0;border-radius:8px;padding:8px 12px;font-weight:700;font-size:14px}
 .empty{text-align:center;color:var(--muted);padding:40px 10px}
+.dgrp{margin-bottom:22px}
+.dhead{all:unset;box-sizing:border-box;cursor:pointer;display:flex;width:100%;justify-content:space-between;align-items:flex-end;gap:10px;padding:14px 16px;border-radius:14px;background:var(--dark);color:#fff;margin-bottom:10px;position:sticky;top:var(--hh,150px);z-index:5;box-shadow:0 8px 18px -12px rgba(0,0,0,.5)}
+.dhead.today{background:var(--red)}
+.dhead .big{font:400 26px/1.05 'Young Serif',Georgia,serif;display:block}
+.dhead .sub{font-size:14px;opacity:.85;display:block;margin-top:3px}
+.dhead .cnt{font-size:13px;font-weight:700;text-align:right;white-space:nowrap;opacity:.95}
+.dhead .cnt small{display:block;font-weight:400;opacity:.8}
+.uphint{font-size:14px;color:var(--muted);margin:0 2px 14px}
 /* booking cards */
 .bk{background:var(--card);border-radius:14px;padding:14px;margin-bottom:10px;display:grid;grid-template-columns:84px minmax(0,1fr);gap:4px 12px;border-left:5px solid var(--dark);position:relative}
 .bk.seated{border-left-color:var(--seat)}
@@ -129,11 +137,12 @@ main{max-width:900px;margin:0 auto;padding:14px}
     </div>
   </div>
   <div class="dayline"><h1 id="dayTitle">…</h1><span class="stats" id="stats"></span></div>
-  <div class="tabs"><button type="button" id="tList" aria-pressed="true">Bookings</button><button type="button" id="tTables" aria-pressed="false">Tables</button></div>
+  <div class="tabs"><button type="button" id="tUp" aria-pressed="true">Upcoming</button><button type="button" id="tList" aria-pressed="false">By day</button><button type="button" id="tTables" aria-pressed="false">Tables</button></div>
 </header>
 <main>
   <div id="closedBanner" class="banner hide"><span id="closedTxt">Closed this day. Online bookings are off.</span><button type="button" id="reopen">Open again</button></div>
-  <div id="list"></div>
+  <div id="upcoming"></div>
+  <div id="list" class="hide"></div>
   <div id="tables" class="hide"></div>
   <p class="sync" id="sync"></p>
 </main>
@@ -188,7 +197,7 @@ main{max-width:900px;margin:0 auto;padding:14px}
   var API='https://script.google.com/macros/s/AKfycbzjqKTC0CLT7kqkpCGWdEVA_Q1rLzpZp0xr3hY4IeMJLD91gcpk8TylPjZWG1DJ5U18/exec';
   var $=function(id){return document.getElementById(id)};
   var store={get:function(k){try{return localStorage.getItem(k)}catch(e){return null}},set:function(k,v){try{localStorage.setItem(k,v)}catch(e){}},del:function(k){try{localStorage.removeItem(k)}catch(e){}}};
-  var pin=store.get('carloPin')||'', data=null, view='list', date=null, timer=null;
+  var pin=store.get('carloPin')||'', data=null, view='upcoming', date=null, timer=null;
   function post(b){b.pin=pin;return fetch(API,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(b)}).then(function(r){return r.json()})}
   function toast(t){var x=$('toast');x.textContent=t;x.classList.add('on');clearTimeout(x._t);x._t=setTimeout(function(){x.classList.remove('on')},2200)}
   function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
@@ -205,12 +214,22 @@ main{max-width:900px;margin:0 auto;padding:14px}
 
   function load(d,quiet){
     if(!quiet)$('sync').textContent='Loading…';
-    return post({a:'list',date:d||''}).then(function(r){
+    var req=view==='upcoming'?{a:'upcoming'}:{a:'list',date:d||date||''};
+    return post(req).then(function(r){
       if(!r.ok){if(r.error==='pin'){store.del('carloPin');location.reload()}return}
-      data=r;date=r.date;render();$('sync').textContent='Updated '+r.now.iso.slice(11)+'. Refreshes by itself.';
+      data=r;if(!r.upcoming)date=r.date;else if(!date)date=r.date;render();$('sync').textContent='Updated '+r.now.iso.slice(11)+'. Refreshes by itself.';
     }).catch(function(){$('sync').textContent='Could not refresh. Check your signal.'});
   }
   function render(){
+    $('upcoming').classList.toggle('hide',view!=='upcoming');$('list').classList.toggle('hide',view!=='list');$('tables').classList.toggle('hide',view!=='tables');
+    document.querySelector('.datenav').style.visibility=view==='upcoming'?'hidden':'visible';
+    if(data.upcoming){
+      $('dayTitle').textContent='Upcoming bookings';
+      var c=data.bookings.reduce(function(a,b){return a+b.size},0);
+      $('stats').textContent=data.bookings.length+(data.bookings.length===1?' booking, ':' bookings, ')+c+' guests';
+      $('closedBanner').classList.add('hide');
+      renderUpcoming();renderClosures();setHH();return;
+    }
     $('dpick').value=date;
     var isToday=date===data.now.date;
     $('dayTitle').textContent=(isToday?'Today, ':'')+data.nice;
@@ -218,8 +237,9 @@ main{max-width:900px;margin:0 auto;padding:14px}
     var covers=act.reduce(function(a,b){return a+b.size},0);
     $('stats').textContent=act.length+(act.length===1?' booking, ':' bookings, ')+covers+' guests'+(data.hours?'':' · closed day');
     $('closedBanner').classList.toggle('hide',!data.closed);
-    renderList();if(view==='tables')renderTables();renderClosures();
+    renderList();if(view==='tables')renderTables();renderClosures();setHH();
   }
+  function setHH(){var h=document.querySelector('header');if(h)document.documentElement.style.setProperty('--hh',(h.offsetHeight+6)+'px')}
   function tableOpts(sel){
     var o='<option value="">No table</option>';
     data.tables.forEach(function(t){o+='<option'+(sel===t.id?' selected':'')+' value="'+t.id+'">'+t.id+' ('+t.seats+')</option>'});
@@ -230,7 +250,9 @@ main{max-width:900px;margin:0 auto;padding:14px}
     var L=$('list');
     if(!data.bookings.length){L.innerHTML='<p class="empty">No bookings for this day yet.</p>';return}
     var nowM=data.now.mins,isToday=date===data.now.date;
-    L.innerHTML=data.bookings.map(function(b){
+    L.innerHTML=data.bookings.map(card).join('');
+  }
+  function card(b){
       var st=b.status,acts='';
       if(st==='confirmed')acts='<button class="seat" data-s="seated">Seated</button><button data-s="noshow">No-show</button><button data-s="cancelled">Cancel</button>';
       else if(st==='seated')acts='<button class="leave" data-s="left">They’ve left, free the table</button><button class="undo" data-s="confirmed">Undo</button>';
@@ -241,20 +263,38 @@ main{max-width:900px;margin:0 auto;padding:14px}
         '<div class="meta"><select class="tsel" aria-label="Table">'+tableOpts(b.tables)+'</select>'+(b.phone?'<a href="tel:'+esc(b.phone)+'">'+esc(b.phone)+'</a>':'')+'<span>'+esc(b.source)+'</span></div>'+
         (b.notes?'<div class="note">'+esc(b.notes)+'</div>':'<div></div>')+
         '<div class="acts">'+acts+'</div></article>';
+  }
+  function relDay(d){if(d===data.now.date)return 'Today';if(d===shift(data.now.date,1))return 'Tomorrow';var p=d.split('-').map(Number);return ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][new Date(Date.UTC(p[0],p[1]-1,p[2])).getUTCDay()]}
+  function renderUpcoming(){
+    var U=$('upcoming');
+    if(!data.bookings.length){U.innerHTML='<p class="empty">No upcoming bookings yet.</p>';return}
+    var groups=[],cur=null;
+    data.bookings.forEach(function(b){if(!cur||cur.date!==b.date){cur={date:b.date,nice:b.nice,items:[]};groups.push(cur)}cur.items.push(b)});
+    U.innerHTML='<p class="uphint">Every booking from today onwards. Tap a date to see that day on its own.</p>'+groups.map(function(g){
+      var rel=relDay(g.date),cov=g.items.reduce(function(a,b){return a+b.size},0);
+      var p=g.date.split('-').map(Number),n=data.now.date.split('-').map(Number),days=Math.round((Date.UTC(p[0],p[1]-1,p[2])-Date.UTC(n[0],n[1]-1,n[2]))/864e5);
+      var M=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],sub;
+      if(rel==='Today'||rel==='Tomorrow')sub=g.nice;
+      else if(days<7)sub=g.nice.replace(/^\w+ /,'')+', this week';
+      else{sub=g.nice+', in '+days+' days';rel=rel.slice(0,3)+' '+p[2]+' '+M[p[1]-1]}
+      return '<section class="dgrp"><button type="button" class="dhead'+(rel==='Today'?' today':'')+'" data-date="'+g.date+'"><span><span class="big">'+rel+'</span><span class="sub">'+esc(sub)+'</span></span><span class="cnt">'+g.items.length+(g.items.length===1?' booking':' bookings')+'<small>'+cov+' guests ›</small></span></button>'+g.items.map(card).join('')+'</section>';
     }).join('');
   }
-  $('list').addEventListener('click',function(e){
+  function onCardClick(e){
+    var dh=e.target.closest('.dhead');if(dh){date=dh.dataset.date;showView('list');return}
     var btn=e.target.closest('button[data-s]');if(!btn)return;
     var card=btn.closest('.bk'),id=card.dataset.id,s=btn.dataset.s;
     if(s==='cancelled'&&!confirm('Cancel this booking?'))return;
     btn.disabled=true;
     post({a:'set',id:id,status:s}).then(function(r){toast(r.ok?(s==='left'?'Table freed':'Saved'):'Could not save');load(date,true)});
-  });
-  $('list').addEventListener('change',function(e){
+  }
+  $('list').addEventListener('click',onCardClick);$('upcoming').addEventListener('click',onCardClick);
+  function onTable(e){
     if(!e.target.classList.contains('tsel'))return;
     var id=e.target.closest('.bk').dataset.id;
     post({a:'move',id:id,tables:e.target.value}).then(function(r){toast(r.ok?'Table changed':'Could not save');load(date,true)});
-  });
+  }
+  $('list').addEventListener('change',onTable);$('upcoming').addEventListener('change',onTable);
   function renderTables(){
     var T=$('tables'),h=data.hours||[720,1290],lo=h[0]-30,hi=h[1]+30,span=hi-lo;
     var pct=function(m){return ((m-lo)/span*100)+'%'};
@@ -278,10 +318,10 @@ main{max-width:900px;margin:0 auto;padding:14px}
   $('reopen').addEventListener('click',function(){post({a:'closure',date:date,remove:true}).then(function(){toast('Day reopened');load(date,true)})});
   $('logout').addEventListener('click',function(){store.del('carloPin');location.reload()});
 
-  $('prev').onclick=function(){load(shift(date,-1))};$('next').onclick=function(){load(shift(date,1))};
-  $('today').onclick=function(){load('')};$('dpick').onchange=function(){if(this.value)load(this.value)};
-  $('tList').onclick=function(){view='list';$('list').classList.remove('hide');$('tables').classList.add('hide');this.setAttribute('aria-pressed','true');$('tTables').setAttribute('aria-pressed','false')};
-  $('tTables').onclick=function(){view='tables';$('tables').classList.remove('hide');$('list').classList.add('hide');if(data)renderTables();this.setAttribute('aria-pressed','true');$('tList').setAttribute('aria-pressed','false')};
+  $('prev').onclick=function(){date=shift(date,-1);load(date)};$('next').onclick=function(){date=shift(date,1);load(date)};
+  $('today').onclick=function(){date=data.now.date;load(date)};$('dpick').onchange=function(){if(this.value){date=this.value;load(date)}};
+  function showView(v){view=v;['tUp','tList','tTables'].forEach(function(id){$(id).setAttribute('aria-pressed',String({tUp:'upcoming',tList:'list',tTables:'tables'}[id]===v))});load(v==='upcoming'?'':date);}
+  $('tUp').onclick=function(){showView('upcoming')};$('tList').onclick=function(){showView('list')};$('tTables').onclick=function(){showView('tables')};
 
   // add booking / walk-in
   var walk=false;
