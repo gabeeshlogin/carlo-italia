@@ -154,7 +154,17 @@
       err.textContent = '';
       if (!s2.reportValidity()) return;
       submit.disabled = true; submit.textContent = 'Booking…';
-      post({ a: 'book', size: state.size, date: state.date, time: state.time, name: fName.querySelector('input').value, email: fEmail.querySelector('input').value, phone: fPhone.querySelector('input').value, notes: fNotes.querySelector('textarea').value, consent: consent.checked, website: hp.value })
+      var body = { a: 'book', size: state.size, date: state.date, time: state.time, name: fName.querySelector('input').value, email: fEmail.querySelector('input').value, phone: fPhone.querySelector('input').value, notes: fNotes.querySelector('textarea').value, consent: consent.checked, website: hp.value };
+      // The booking is saved before the confirmation emails and alerts go out, so if the reply is slow or the
+      // connection drops, sending the same details again is safe: the server spots the duplicate and returns it.
+      function attempt(n) {
+        return post(body).catch(function (e) {
+          if (n >= 3) throw e;
+          submit.textContent = 'Confirming…';
+          return new Promise(function (res) { setTimeout(res, 2500 * n); }).then(function () { return attempt(n + 1); });
+        });
+      }
+      attempt(1)
         .then(function (r) {
           if (r.ok) {
             s3.innerHTML = '';
