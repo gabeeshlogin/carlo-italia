@@ -1,0 +1,5 @@
+User-agent: *
+Disallow: /bookings/
+Disallow: /cancel.html
+
+Sitemap: https://www.carloitalia.com/sitemap.xml
