@@ -34,24 +34,27 @@
     var wrap = el('div', { class: 'cb-inner' });
     root.appendChild(wrap);
 
-    // step 1: guests, date, time
+    // step 1: guests, date, time (all taps, no swiping)
     var s1 = el('div', { class: 'cb-step' });
-    var sizeOut = el('output', { class: 'cb-size', text: '2' });
-    var minus = el('button', { type: 'button', class: 'cb-round', 'aria-label': 'Fewer guests', text: '−', onclick: function () { setSize(state.size - 1); } });
-    var plus = el('button', { type: 'button', class: 'cb-round', 'aria-label': 'More guests', text: '+', onclick: function () { setSize(state.size + 1); } });
-    var bigNote = el('p', { class: 'cb-note', html: 'More than 8 of you? Call us on <a href="' + TEL + '">' + PHONE + '</a> and we will sort it.' });
-    s1.appendChild(el('div', { class: 'cb-row' }, [el('span', { class: 'cb-label', text: 'Guests' }), el('div', { class: 'cb-stepper' }, [minus, sizeOut, plus])]));
-    s1.appendChild(bigNote);
+    var MAXG = 8;
+    var sizes = el('div', { class: 'cb-sizes', role: 'radiogroup', 'aria-label': 'Number of guests' });
+    for (var g = 1; g <= MAXG; g++) {
+      sizes.appendChild(el('button', { type: 'button', class: 'cb-chip', role: 'radio', 'aria-checked': 'false', 'data-n': String(g), text: String(g),
+        onclick: (function (n) { return function () { setSize(n); }; })(g) }));
+    }
+    var bigNote = el('p', { class: 'cb-note', html: 'More than ' + MAXG + '? Call <a href="' + TEL + '">' + PHONE + '</a> and we will sort it.' });
+    s1.appendChild(el('div', { class: 'cb-block' }, [el('span', { class: 'cb-label', text: 'How many guests?' }), sizes, bigNote]));
 
-    s1.appendChild(el('span', { class: 'cb-label', text: 'Date' }));
-    var days = el('div', { class: 'cb-days', role: 'listbox', 'aria-label': 'Choose a date' });
-    var other = el('input', { type: 'date', class: 'cb-other', 'aria-label': 'Or pick another date' });
-    s1.appendChild(days);
-    s1.appendChild(el('label', { class: 'cb-otherwrap' }, ['Later date: ', other]));
+    var monthLbl = el('span', { class: 'cb-month' });
+    var prevW = el('button', { type: 'button', class: 'cb-nav', 'aria-label': 'Earlier dates', html: '&#8249;', onclick: function () { page(-1); } });
+    var nextW = el('button', { type: 'button', class: 'cb-nav', 'aria-label': 'Later dates', html: '&#8250;', onclick: function () { page(1); } });
+    var days = el('div', { class: 'cb-days', role: 'radiogroup', 'aria-label': 'Choose a date' });
+    s1.appendChild(el('div', { class: 'cb-block' }, [
+      el('div', { class: 'cb-dayhead' }, [el('span', { class: 'cb-label', text: 'Which day?' }), el('div', { class: 'cb-pager' }, [prevW, monthLbl, nextW])]),
+      days]));
 
-    s1.appendChild(el('span', { class: 'cb-label', text: 'Time' }));
-    var times = el('div', { class: 'cb-times', 'aria-live': 'polite' }, [el('p', { class: 'cb-hint', text: 'Pick a date to see the free times.' })]);
-    s1.appendChild(times);
+    var times = el('div', { class: 'cb-times', 'aria-live': 'polite' });
+    s1.appendChild(el('div', { class: 'cb-block' }, [el('span', { class: 'cb-label', text: 'What time?' }), times]));
     wrap.appendChild(s1);
 
     // step 2: details
@@ -60,9 +63,9 @@
     var change = el('button', { type: 'button', class: 'cb-link', text: 'Change', onclick: function () { show(1); } });
     s2.appendChild(el('div', { class: 'cb-sumrow' }, [summary, change]));
     function field(label, attrs) { var i = el(attrs.tag || 'input', attrs); delete attrs.tag; return el('label', { class: 'cb-field' }, [el('span', { text: label }), i]); }
-    var fName = field('Your name', { name: 'name', autocomplete: 'name', required: '' });
-    var fEmail = field('Email', { name: 'email', type: 'email', autocomplete: 'email', required: '' });
-    var fPhone = field('Mobile', { name: 'phone', type: 'tel', autocomplete: 'tel', required: '' });
+    var fName = field('Name', { name: 'name', autocomplete: 'name', required: '' });
+    var fPhone = field('Mobile', { name: 'phone', type: 'tel', autocomplete: 'tel', inputmode: 'tel', required: '' });
+    var fEmail = field('Email (for your confirmation)', { name: 'email', type: 'email', autocomplete: 'email', inputmode: 'email', required: '' });
     var fNotes = field('Anything we should know? (optional)', { tag: 'textarea', name: 'notes', rows: '2', placeholder: 'Birthday, high chair, allergies…' });
     var hp = el('input', { name: 'website', tabindex: '-1', autocomplete: 'off', class: 'cb-hp', 'aria-hidden': 'true' });
     var consent = el('input', { type: 'checkbox', name: 'consent', required: '' });
@@ -82,59 +85,66 @@
 
     function show(n) {
       s1.hidden = n !== 1; s2.hidden = n !== 2; s3.hidden = n !== 3;
-      var t = n === 1 ? s1 : n === 2 ? s2 : s3;
-      if (n !== 1) { try { (n === 2 ? fName.querySelector('input') : s3).focus({ preventScroll: true }); } catch (e) { } }
-      var r = root.getBoundingClientRect(); if (r.top < 0) root.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      if (n === 3) { try { s3.focus({ preventScroll: true }); } catch (e) { } }
+      var r = root.getBoundingClientRect(); if (r.top < 0 || r.top > window.innerHeight * 0.6) root.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
+    function maxG() { return Math.min(MAXG, (state.cfg && state.cfg.maxOnline) || MAXG); }
     function setSize(n) {
-      state.size = Math.max(1, Math.min((state.cfg && state.cfg.maxOnline) || 8, n));
-      sizeOut.textContent = state.size;
-      minus.disabled = state.size <= 1; plus.disabled = state.size >= ((state.cfg && state.cfg.maxOnline) || 8);
-      bigNote.classList.toggle('on', state.size >= ((state.cfg && state.cfg.maxOnline) || 8));
+      state.size = Math.max(1, Math.min(maxG(), n));
+      [].forEach.call(sizes.children, function (b) { var on = +b.getAttribute('data-n') === state.size; b.setAttribute('aria-checked', on ? 'true' : 'false'); b.disabled = +b.getAttribute('data-n') > maxG(); });
+      bigNote.classList.toggle('on', state.size >= maxG());
       if (state.date) loadTimes();
     }
     function isOpen(d) {
       var c = state.cfg; if (!c) return true;
       return c.openDays.indexOf(d.getDay()) > -1 && c.closed.indexOf(iso(d)) < 0;
     }
+    var PER = 14, pg = 0;
+    function startDay() { return state.cfg ? parse(state.cfg.today) : new Date(); }
+    function lastPage() { return Math.floor((((state.cfg && state.cfg.maxDays) || 120)) / PER); }
+    function page(dir) { pg = Math.max(0, Math.min(lastPage(), pg + dir)); buildDays(); }
     function buildDays() {
       days.innerHTML = '';
-      var start = state.cfg ? parse(state.cfg.today) : new Date();
-      for (var i = 0; i < 21; i++) {
-        var d = new Date(start.getFullYear(), start.getMonth(), start.getDate() + i), open = isOpen(d), v = iso(d);
-        var b = el('button', { type: 'button', class: 'cb-day', role: 'option', 'data-date': v, 'aria-selected': 'false' },
-          [el('small', { text: i === 0 ? 'Today' : i === 1 ? 'Tmrw' : DAYS[d.getDay()] }), el('b', { text: String(d.getDate()) }), el('small', { text: open ? MON[d.getMonth()] : 'Closed' })]);
-        if (!open) b.disabled = true;
+      var s = startDay(), first = null, months = [];
+      for (var i = pg * PER; i < pg * PER + PER; i++) {
+        var d = new Date(s.getFullYear(), s.getMonth(), s.getDate() + i), open = isOpen(d), v = iso(d);
+        if (months.indexOf(MON[d.getMonth()]) < 0) months.push(MON[d.getMonth()]);
+        var b = el('button', { type: 'button', class: 'cb-day', role: 'radio', 'data-date': v, 'aria-checked': state.date === v ? 'true' : 'false',
+          'aria-label': (i === 0 ? 'Today, ' : i === 1 ? 'Tomorrow, ' : '') + DAYS[d.getDay()] + ' ' + d.getDate() + ' ' + MON[d.getMonth()] + (open ? '' : ', closed') },
+          [el('small', { text: i === 0 ? 'Today' : i === 1 ? 'Tmrw' : DAYS[d.getDay()] }), el('b', { text: String(d.getDate()) })]);
+        if (!open) b.disabled = true; else if (!first) first = v;
         b.addEventListener('click', (function (v) { return function () { pickDate(v); }; })(v));
         days.appendChild(b);
       }
-      other.min = iso(start);
-      var max = new Date(start.getFullYear(), start.getMonth(), start.getDate() + ((state.cfg && state.cfg.maxDays) || 120));
-      other.max = iso(max);
+      monthLbl.textContent = months.join(' / ');
+      prevW.disabled = pg === 0; nextW.disabled = pg >= lastPage();
+      return first;
     }
     function pickDate(v) {
       state.date = v; state.time = null;
-      [].forEach.call(days.children, function (b) { b.setAttribute('aria-selected', b.getAttribute('data-date') === v ? 'true' : 'false'); });
-      if (!days.querySelector('[data-date="' + v + '"]')) other.value = v; else other.value = '';
+      [].forEach.call(days.children, function (b) { b.setAttribute('aria-checked', b.getAttribute('data-date') === v ? 'true' : 'false'); });
       loadTimes();
     }
-    other.addEventListener('change', function () { if (other.value) pickDate(other.value); });
     var reqN = 0;
     function loadTimes() {
       var my = ++reqN, d = parse(state.date);
       times.innerHTML = '';
       if (!isOpen(d)) { times.appendChild(el('p', { class: 'cb-hint', text: 'We are closed that day. Please pick another date.' })); return; }
-      times.appendChild(el('div', { class: 'cb-loading' }, [el('i'), el('i'), el('i'), el('i'), el('i'), el('i')]));
+      times.appendChild(el('div', { class: 'cb-timegrid cb-loading' }, [el('i'), el('i'), el('i'), el('i'), el('i'), el('i'), el('i'), el('i')]));
       get({ a: 'slots', date: state.date, size: state.size }).then(function (r) {
         if (my !== reqN) return;
         times.innerHTML = '';
         if (!r.ok) throw new Error(r.error);
-        if (!r.times.length) { times.appendChild(el('p', { class: 'cb-hint', html: 'Sorry, there is nothing free for ' + state.size + ' that day online. Try another date, or call <a href="' + TEL + '">' + PHONE + '</a>.' })); return; }
-        var grid = el('div', { class: 'cb-timegrid' });
-        r.times.forEach(function (t) {
-          grid.appendChild(el('button', { type: 'button', class: 'cb-time', text: fmtTime(t), onclick: function () { state.time = t; toDetails(); } }));
+        if (!r.times.length) { times.appendChild(el('p', { class: 'cb-hint', html: 'Nothing free online for ' + state.size + ' that day. Try another day, or call <a href="' + TEL + '">' + PHONE + '</a>.' })); return; }
+        var groups = [['Lunch', r.times.filter(function (t) { return t < '17:00'; })], ['Dinner', r.times.filter(function (t) { return t >= '17:00'; })]];
+        groups.forEach(function (gp) {
+          if (!gp[1].length) return;
+          var grid = el('div', { class: 'cb-timegrid' });
+          gp[1].forEach(function (t) {
+            grid.appendChild(el('button', { type: 'button', class: 'cb-time', text: fmtTime(t), onclick: function () { state.time = t; toDetails(); } }));
+          });
+          times.appendChild(el('div', { class: 'cb-tgroup' }, [el('span', { class: 'cb-sub', text: gp[0] }), grid]));
         });
-        times.appendChild(grid);
       }).catch(function () {
         if (my !== reqN) return;
         times.innerHTML = '';
@@ -184,8 +194,15 @@
     });
 
     setSize(2);
+    times.appendChild(el('p', { class: 'cb-hint', text: 'Pick a day to see the free times.' }));
     buildDays();
-    get({ a: 'cfg' }).then(function (c) { if (c && c.ok) { state.cfg = c; buildDays(); setSize(state.size); } }).catch(function () { });
+    get({ a: 'cfg' }).then(function (c) {
+      if (!c || !c.ok) return;
+      state.cfg = c; setSize(state.size);
+      var first = buildDays();
+      if (!first) { page(1); first = days.querySelector('.cb-day:not(:disabled)'); first = first && first.getAttribute('data-date'); }
+      if (first && !state.date) pickDate(first);
+    }).catch(function () { });
   }
 
   function init() { [].forEach.call(document.querySelectorAll('[data-carlo-booking]'), mount); }
